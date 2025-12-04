@@ -1162,7 +1162,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Financial Statement Analysis<span class="version-badge">v6.0</span></h1>
+            <h1>📊 Financial Statement Analysis<span class="version-badge">v6.2</span></h1>
             <p class="subtitle">Alphabet, Meta & Apple | 2022-2024</p>
         </div>
 
@@ -1222,6 +1222,10 @@
                         <option value="solvency">All Solvency Ratios</option>
                         <option value="profitability">All Profitability Ratios</option>
                         <option value="investment">All Investment Ratios</option>
+                    </select>
+                    <select id="quickYearSelect">
+                        <option value="2024">Year: 2024</option>
+                        <option value="2023">Year: 2023</option>
                     </select>
                 </div>
                 <div class="quick-ratio-display" id="quickRatioDisplay">
@@ -3036,9 +3040,9 @@ function formatRatioValue(value) {
     return prefix + formatted + suffix;
 }
 
-function renderQuickRatioComparison(ratioKey) {
+function renderQuickRatioComparison(ratioKey, year = '2024') {
     const display = document.getElementById('quickRatioDisplay');
-    const year = 2024; // Always use 2024 for game questions
+    const yearNum = parseInt(year);
     
     const companies = ['alphabet', 'meta', 'apple'];
     const companyNames = {
@@ -3050,8 +3054,8 @@ function renderQuickRatioComparison(ratioKey) {
     const values = companies.map(company => ({
         company: company,
         name: companyNames[company],
-        value: RATIO_MAP[ratioKey](company, year),
-        rawValue: RATIO_MAP[ratioKey](company, year)
+        value: RATIO_MAP[ratioKey](company, yearNum),
+        rawValue: RATIO_MAP[ratioKey](company, yearNum)
     }));
     
     // Find highest value for highlighting (if numeric)
@@ -3069,7 +3073,7 @@ function renderQuickRatioComparison(ratioKey) {
     let html = `
         <div style="margin-bottom: 10px;">
             <strong style="color: #2c3e50; font-size: 1.05rem;">${RATIO_NAMES[ratioKey]}</strong>
-            <span style="color: var(--text-muted); font-size: 0.9rem; margin-left: 10px;">(2024)</span>
+            <span style="color: var(--text-muted); font-size: 0.9rem; margin-left: 10px;">(${year})</span>
         </div>
     `;
     
@@ -3087,9 +3091,9 @@ function renderQuickRatioComparison(ratioKey) {
     display.innerHTML = html;
 }
 
-function renderQuickCategoryComparison(category) {
+function renderQuickCategoryComparison(category, year = '2024') {
     const display = document.getElementById('quickRatioDisplay');
-    const year = 2024;
+    const yearNum = parseInt(year);
     
     const categoryNames = {
         liquidity: 'Liquidity Ratios',
@@ -3114,7 +3118,7 @@ function renderQuickCategoryComparison(category) {
     let html = `
         <div style="margin-bottom: 10px;">
             <strong style="color: #2c3e50; font-size: 1.05rem;">${categoryNames[category]}</strong>
-            <span style="color: var(--text-muted); font-size: 0.9rem; margin-left: 10px;">(2024)</span>
+            <span style="color: var(--text-muted); font-size: 0.9rem; margin-left: 10px;">(${year})</span>
         </div>
         <table class="ratio-category-table">
             <thead>
@@ -3129,7 +3133,7 @@ function renderQuickCategoryComparison(category) {
     `;
     
     ratios.forEach(ratioKey => {
-        const values = companies.map(company => RATIO_MAP[ratioKey](company, year));
+        const values = companies.map(company => RATIO_MAP[ratioKey](company, yearNum));
         
         // Find best value index
         const numericValues = values.map(v => {
@@ -3225,10 +3229,11 @@ function renderQuickCategoryComparison(category) {
             // Quick Ratio Lookup event listeners
             document.getElementById('quickRatioSelect').addEventListener('change', function(e) {
                 const ratioKey = e.target.value;
+                const year = document.getElementById('quickYearSelect').value;
                 if (ratioKey) {
                     // Clear category selection
                     document.getElementById('quickCategorySelect').value = '';
-                    renderQuickRatioComparison(ratioKey);
+                    renderQuickRatioComparison(ratioKey, year);
                 } else {
                     document.getElementById('quickRatioDisplay').innerHTML = `
                         <div style="color: var(--text-muted); text-align: center; padding: 20px;">
@@ -3240,16 +3245,30 @@ function renderQuickCategoryComparison(category) {
 
             document.getElementById('quickCategorySelect').addEventListener('change', function(e) {
                 const category = e.target.value;
+                const year = document.getElementById('quickYearSelect').value;
                 if (category) {
                     // Clear individual ratio selection
                     document.getElementById('quickRatioSelect').value = '';
-                    renderQuickCategoryComparison(category);
+                    renderQuickCategoryComparison(category, year);
                 } else {
                     document.getElementById('quickRatioDisplay').innerHTML = `
                         <div style="color: var(--text-muted); text-align: center; padding: 20px;">
                             Select a ratio or category above to compare all three companies
                         </div>
                     `;
+                }
+            });
+
+            // Year selector - refresh current view when changed
+            document.getElementById('quickYearSelect').addEventListener('change', function(e) {
+                const year = e.target.value;
+                const ratioKey = document.getElementById('quickRatioSelect').value;
+                const category = document.getElementById('quickCategorySelect').value;
+                
+                if (ratioKey) {
+                    renderQuickRatioComparison(ratioKey, year);
+                } else if (category) {
+                    renderQuickCategoryComparison(category, year);
                 }
             });
 
